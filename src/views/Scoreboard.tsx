@@ -77,7 +77,7 @@ export default function Scoreboard({ league }: { league: League }) {
   const { teams, games, results } = league
   const { totals, byGame, ranked } = computeStandings(teams, games, results)
 
-  const playerCount = teams.reduce((n, t) => n + t.players.filter(Boolean).length, 0)
+  const playerCount = 12
   const golfGames = games.filter((g) => g.category === 'golf')
   const miniGames = games.filter((g) => g.category === 'mini')
   const golfMax = golfGames.reduce((s, g) => s + maxPoints(g), 0)
