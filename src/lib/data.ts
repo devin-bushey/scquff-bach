@@ -45,6 +45,29 @@ export function useLeague() {
 
 export type League = ReturnType<typeof useLeague>
 
+// Canonical round-robin pairings for matchup games: [1v2, 1v3, 2v3] by team id.
+// matchup_winners arrays in results are aligned to this order.
+export function matchupPairs(teams: Team[]): [Team, Team][] {
+  const [a, b, c] = [...teams].sort((x, y) => x.id - y.id)
+  if (!a || !b || !c) return []
+  return [
+    [a, b],
+    [a, c],
+    [b, c],
+  ]
+}
+
+export function decidedMatches(result: GameResult | undefined) {
+  return result?.matchup_winners?.filter((w) => w != null).length ?? 0
+}
+
+export function isGameComplete(game: Game, result: GameResult | undefined) {
+  if (game.kind === 'matchup') {
+    return (result?.matchup_winners?.length ?? 0) > 0 && decidedMatches(result) === result!.matchup_winners!.length
+  }
+  return result != null
+}
+
 export function computeStandings(teams: Team[], games: Game[], results: GameResult[]) {
   const totals = new Map<number, number>(teams.map((t) => [t.id, 0]))
   // game_id -> (team_id -> points earned in that game)
@@ -61,6 +84,10 @@ export function computeStandings(teams: Team[], games: Game[], results: GameResu
       })
     } else if (game.kind === 'winner' && result.winner_team_id != null) {
       pts.set(result.winner_team_id, game.points as number)
+    } else if (game.kind === 'matchup' && result.matchup_winners) {
+      for (const w of result.matchup_winners) {
+        if (w != null) pts.set(w, (pts.get(w) ?? 0) + (game.points as number))
+      }
     }
     byGame.set(result.game_id, pts)
     for (const [teamId, p] of pts) {
@@ -80,6 +107,7 @@ export async function saveResult(
     placements?: number[]
     winner_team_id?: number
     winner_player?: string | null
+    matchup_winners?: (number | null)[]
   },
 ) {
   const { error } = await supabase.from('results').upsert(
@@ -88,6 +116,7 @@ export async function saveResult(
       placements: null,
       winner_team_id: null,
       winner_player: null,
+      matchup_winners: null,
       ...data,
       updated_at: new Date().toISOString(),
     },

@@ -9,8 +9,8 @@ export interface Game {
   id: number
   name: string
   category: 'mini' | 'golf'
-  kind: 'placement' | 'winner'
-  // placement: [pts for 1st, 2nd, 3rd]; winner: flat points
+  kind: 'placement' | 'winner' | 'matchup'
+  // placement: [pts for 1st, 2nd, 3rd]; winner: flat points; matchup: flat pts per match win
   points: number[] | number
   sort_order: number
 }
@@ -21,5 +21,7 @@ export interface GameResult {
   placements: number[] | null
   winner_team_id: number | null
   winner_player: string | null
+  // matchup: winner team id (or null) per match, aligned to matchupPairs() order
+  matchup_winners: (number | null)[] | null
   updated_at: string
 }

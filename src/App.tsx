@@ -6,10 +6,10 @@ import Teams from './views/Teams'
 
 type Tab = 'scoreboard' | 'games' | 'teams'
 
-const TABS: { id: Tab; label: string; icon: string }[] = [
-  { id: 'scoreboard', label: 'Scoreboard', icon: '🏆' },
-  { id: 'games', label: 'Games', icon: '🎯' },
-  { id: 'teams', label: 'Teams', icon: '👥' },
+const TABS: { id: Tab; label: string }[] = [
+  { id: 'scoreboard', label: 'Scoreboard' },
+  { id: 'games', label: 'Games' },
+  { id: 'teams', label: 'Teams' },
 ]
 
 export default function App() {
@@ -17,15 +17,27 @@ export default function App() {
   const league = useLeague()
 
   return (
-    <div className="mx-auto flex min-h-dvh max-w-md flex-col">
-      <main className="flex-1 px-4 pt-6 pb-28">
+    <div className="flex min-h-dvh flex-col">
+      <header className="border-b-[1.5px] border-rule">
+        <div className="mx-auto flex max-w-[940px] items-end justify-between px-6 pt-[18px] pb-3.5">
+          <button
+            onClick={() => setTab('scoreboard')}
+            className="flex items-center gap-[9px] text-[19px] font-black tracking-[-0.01em]"
+          >
+            <span className="inline-block size-[11px] rounded-full border-[1.5px] border-ink bg-lime" />
+            Scquff's Bach
+          </button>
+          <span className="kicker hidden sm:block">Bachelor Weekend · Kelowna BC</span>
+        </div>
+      </header>
+      <main className="mx-auto w-full max-w-[940px] flex-1 px-6 pb-32">
         {league.error && (
-          <div className="mb-4 rounded-lg border border-red-700 bg-red-950 p-3 text-sm text-red-200">
+          <div className="mt-6 border-[1.5px] border-rule p-3 font-mono text-xs">
             Can't reach the database: {league.error}
           </div>
         )}
         {league.loading ? (
-          <p className="pt-24 text-center text-zinc-400">Loading the weekend…</p>
+          <p className="pt-24 text-center text-lg text-dim italic">Loading the weekend…</p>
         ) : tab === 'scoreboard' ? (
           <Scoreboard league={league} />
         ) : tab === 'games' ? (
@@ -34,18 +46,21 @@ export default function App() {
           <Teams league={league} />
         )}
       </main>
-      <nav className="fixed inset-x-0 bottom-0 border-t border-zinc-800 bg-zinc-950/95 pb-[env(safe-area-inset-bottom)] backdrop-blur">
-        <div className="mx-auto flex max-w-md">
+      <nav className="fixed inset-x-0 bottom-0 border-t-[1.5px] border-rule bg-paper pb-[env(safe-area-inset-bottom)]">
+        <div className="mx-auto flex max-w-[940px]">
           {TABS.map((t) => (
             <button
               key={t.id}
               onClick={() => setTab(t.id)}
-              className={`flex flex-1 flex-col items-center gap-0.5 py-2.5 text-xs font-medium ${
-                tab === t.id ? 'text-amber-400' : 'text-zinc-400'
-              }`}
+              className="flex flex-1 justify-center py-3.5 font-mono text-xs tracking-[0.04em]"
             >
-              <span className="text-xl">{t.icon}</span>
-              {t.label}
+              <span
+                className={`border-b-[1.5px] pb-0.5 ${
+                  tab === t.id ? 'border-ink text-ink' : 'border-transparent text-dim'
+                }`}
+              >
+                {t.label}
+              </span>
             </button>
           ))}
         </div>

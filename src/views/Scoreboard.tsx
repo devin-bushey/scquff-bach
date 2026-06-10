@@ -1,93 +1,311 @@
-import { computeStandings } from '../lib/data'
+import { computeStandings, isGameComplete } from '../lib/data'
 import type { League } from '../lib/data'
+import type { Game } from '../lib/types'
+import Lede from '../components/Lede'
 
-const MEDALS = ['🥇', '🥈', '🥉']
+const SCHEDULE = [
+  {
+    day: 'Thu',
+    time: 'Evening',
+    title: 'Draft Night',
+    desc: 'Teams formed, names chosen, board goes live.',
+    badge: 'Setup',
+    main: false,
+  },
+  {
+    day: 'Thu–Sat',
+    time: 'Ad hoc',
+    title: 'Mini Games',
+    desc: 'Beer pong, pool, ping pong — round-robins all weekend. Every team plays every team once; 5 pts a win.',
+    badge: 'Mini ×3',
+    main: false,
+  },
+  {
+    day: 'Fri',
+    time: 'Afternoon',
+    title: 'Golf',
+    desc: 'Scramble + 2 closest-to-pin + 2 long drive. The big swing.',
+    badge: 'Main event',
+    main: true,
+  },
+  {
+    day: 'Fri',
+    time: 'Night',
+    title: 'Bowling',
+    desc: 'BNA Brewing. 2 lanes, 6 a side — each team splits 2 bowlers per lane. Combined pinfall decides the finish.',
+    badge: 'Mini',
+    main: false,
+  },
+  {
+    day: 'Sat',
+    time: 'Night',
+    title: 'Wine Tour',
+    desc: 'No games — prize announcement at dinner.',
+    badge: 'Finale',
+    main: false,
+  },
+]
+
+function shortName(name: string) {
+  return name
+    .replace('Golf — Team Match', 'Golf')
+    .replace('Closest to the Pin', 'CTP')
+    .replace('Long Drive', 'LD')
+    .replace('Table Tennis', 'Pong')
+    .replace('Beer Pong', 'BP')
+}
+
+function maxPoints(game: Game) {
+  if (Array.isArray(game.points)) return Math.max(...game.points)
+  // matchup: a team plays two matches, so max is two wins
+  return game.kind === 'matchup' ? game.points * 2 : game.points
+}
+
+function pointsDetail(game: Game) {
+  if (Array.isArray(game.points)) return `${game.points.join(' / ')} by finish.`
+  if (game.kind === 'matchup')
+    return `Round-robin, every team plays every team once. ${game.points} pts per match win.`
+  return `Winner's team takes ${game.points} pts.`
+}
+
+// The main team-match column stays visible on mobile; other events collapse.
+function alwaysVisible(game: Game) {
+  return game.category === 'golf' && game.kind === 'placement'
+}
 
 export default function Scoreboard({ league }: { league: League }) {
   const { teams, games, results } = league
   const { totals, byGame, ranked } = computeStandings(teams, games, results)
-  const leaderPts = ranked.length ? (totals.get(ranked[0].id) ?? 0) : 0
+
+  const playerCount = teams.reduce((n, t) => n + t.players.filter(Boolean).length, 0)
+  const golfGames = games.filter((g) => g.category === 'golf')
+  const miniGames = games.filter((g) => g.category === 'mini')
+  const golfMax = golfGames.reduce((s, g) => s + maxPoints(g), 0)
+  const miniMax = miniGames.reduce((s, g) => s + maxPoints(g), 0)
 
   return (
     <div>
-      <header className="mb-6 text-center">
-        <h1 className="text-3xl font-black tracking-tight">SCQUFF BACH</h1>
-        <p className="mt-1 text-sm text-zinc-400">
-          {results.length} of {games.length} events played
-        </p>
-      </header>
+      {/* hero */}
+      <section className="border-b-[1.5px] border-rule pt-12 pb-8">
+        <h1 className="text-[clamp(52px,12vw,140px)] leading-[0.86] font-black tracking-[-0.03em]">
+          Scquff's
+          <br />
+          <span className="outlined">Bach</span>
+        </h1>
+        <div className="mt-6 flex flex-wrap gap-x-7 gap-y-2 font-mono text-xs tracking-[0.02em] text-dim">
+          <span>
+            <b className="font-medium text-ink">{teams.length}</b> teams
+          </span>
+          <span>
+            <b className="font-medium text-ink">{playerCount}</b> players
+          </span>
+          <span>
+            <b className="font-medium text-ink">{games.length}</b> events
+          </span>
+          <span>
+            <b className="font-medium text-ink">1</b> winner
+          </span>
+          <span>
+            <b className="font-medium text-ink">
+              {games.filter((g) => isGameComplete(g, results.find((r) => r.game_id === g.id))).length}
+            </b>{' '}
+            of <b className="font-medium text-ink">{games.length}</b> played
+          </span>
+        </div>
+      </section>
 
-      <div className="space-y-3">
-        {ranked.map((team, i) => {
-          const pts = totals.get(team.id) ?? 0
-          return (
-            <div
-              key={team.id}
-              className="flex items-center gap-3 rounded-xl border border-zinc-800 bg-zinc-900 p-4"
-              style={{ borderLeft: `5px solid ${team.color}` }}
-            >
-              <span className="text-3xl">{MEDALS[i] ?? '🏅'}</span>
-              <div className="min-w-0 flex-1">
-                <p className="truncate text-lg font-bold">{team.name}</p>
-                <p className="truncate text-xs text-zinc-400">
-                  {team.players.filter(Boolean).join(' · ') || 'No players yet'}
-                </p>
+      {/* standings */}
+      <section>
+        <Lede num="/01" title="Standings" right="Live" />
+        <div className="border-t-[1.5px] border-rule">
+          {ranked.map((team, i) => {
+            const pts = totals.get(team.id) ?? 0
+            const lead = i === 0 && results.length > 0
+            return (
+              <div
+                key={team.id}
+                className={`relative grid grid-cols-[44px_1fr_auto] items-center gap-3 border-b border-hair px-1 py-5 sm:gap-[18px] ${
+                  i === ranked.length - 1 ? 'border-b-[1.5px] border-b-rule' : ''
+                }`}
+              >
+                {lead && <span className="absolute top-0 -left-6 -bottom-px w-1.5 bg-lime" />}
+                <span className="self-start pt-2 font-mono text-[13px] text-dim">
+                  {String(i + 1).padStart(2, '0')}
+                </span>
+                <span className="min-w-0">
+                  <span className="block text-[clamp(28px,5.2vw,46px)] leading-none font-black tracking-[-0.02em]">
+                    <span
+                      className="mr-3 inline-block size-3 rounded-full border-[1.5px] border-ink align-baseline"
+                      style={{ backgroundColor: team.color }}
+                    />
+                    {team.name}
+                    {lead && (
+                      <span className="ml-3.5 rounded-[2px] bg-lime px-[7px] py-[3px] align-middle font-mono text-[10px] font-normal tracking-[0.14em]">
+                        ★ LEADER
+                      </span>
+                    )}
+                  </span>
+                  <span className="mt-[9px] block font-mono text-[11px] tracking-[0.02em] text-dim">
+                    {team.players.filter(Boolean).join(' · ') || 'No players yet'}
+                  </span>
+                </span>
+                <span className="text-right font-mono text-[clamp(30px,6vw,52px)] leading-none font-medium tracking-[-0.03em] tabular-nums">
+                  {pts}
+                  <span className="mt-1.5 block text-[10px] tracking-[0.16em] text-dim uppercase">
+                    pts
+                  </span>
+                </span>
               </div>
-              <div className="text-right">
-                <p className="text-2xl font-black tabular-nums">{pts}</p>
-                <p className="text-xs text-zinc-500">
-                  {i === 0 ? (results.length ? 'leading' : '—') : `-${leaderPts - pts}`}
-                </p>
-              </div>
-            </div>
-          )
-        })}
-      </div>
+            )
+          })}
+        </div>
+      </section>
 
-      <h2 className="mt-8 mb-2 text-sm font-semibold tracking-wide text-zinc-400 uppercase">
-        Breakdown
-      </h2>
-      <div className="overflow-hidden rounded-xl border border-zinc-800">
-        <table className="w-full text-sm">
+      {/* breakdown */}
+      <section>
+        <Lede num="/02" title="The Breakdown" right="Per event" />
+        <table className="w-full border-collapse border-t-[1.5px] border-b-[1.5px] border-rule font-mono">
           <thead>
-            <tr className="bg-zinc-900 text-zinc-400">
-              <th className="px-3 py-2 text-left font-medium">Event</th>
-              {teams.map((t) => (
+            <tr>
+              <th className="border-b border-hair px-2 py-3 text-left text-[10px] font-normal tracking-[0.12em] text-dim uppercase">
+                Team
+              </th>
+              {games.map((g) => (
                 <th
-                  key={t.id}
-                  className="px-2 py-2 text-center font-medium"
-                  style={{ color: t.color }}
+                  key={g.id}
+                  className={`border-b border-hair px-2 py-3 text-center text-[10px] font-normal tracking-[0.12em] text-dim uppercase ${
+                    alwaysVisible(g) ? '' : 'hidden sm:table-cell'
+                  }`}
                 >
-                  {t.name.length > 8 ? `${t.name.slice(0, 7)}…` : t.name}
+                  {shortName(g.name)}
                 </th>
               ))}
+              <th className="border-b border-hair px-2 py-3 text-center text-[10px] font-normal tracking-[0.12em] text-dim uppercase">
+                Total
+              </th>
             </tr>
           </thead>
           <tbody>
-            {games.map((game) => {
-              const pts = byGame.get(game.id)
-              return (
-                <tr key={game.id} className="border-t border-zinc-800">
-                  <td className="px-3 py-2 text-zinc-300">{game.name}</td>
-                  {teams.map((t) => (
-                    <td key={t.id} className="px-2 py-2 text-center tabular-nums">
+            {ranked.map((team) => (
+              <tr key={team.id}>
+                <td className="border-b border-hair px-2 py-3 text-left font-serif text-base font-black">
+                  {team.name}
+                </td>
+                {games.map((g) => {
+                  const pts = byGame.get(g.id)
+                  return (
+                    <td
+                      key={g.id}
+                      className={`border-b border-hair px-2 py-3 text-center text-[13px] tabular-nums ${
+                        alwaysVisible(g) ? '' : 'hidden sm:table-cell'
+                      }`}
+                    >
                       {pts ? (
-                        pts.has(t.id) ? (
-                          <span className="font-semibold text-zinc-100">{pts.get(t.id)}</span>
-                        ) : (
-                          <span className="text-zinc-500">0</span>
-                        )
+                        (pts.get(team.id) ?? <span className="text-dim">0</span>)
                       ) : (
-                        <span className="text-zinc-600">–</span>
+                        <span className="text-dim">—</span>
                       )}
                     </td>
-                  ))}
-                </tr>
-              )
-            })}
+                  )
+                })}
+                <td className="border-b border-hair bg-ink px-2 py-3 text-center text-base font-medium text-paper tabular-nums">
+                  {totals.get(team.id) ?? 0}
+                </td>
+              </tr>
+            ))}
           </tbody>
         </table>
-      </div>
+      </section>
+
+      {/* schedule */}
+      <section>
+        <Lede num="/03" title="Schedule" right="Thu → Sat" />
+        <div className="border-t-[1.5px] border-rule">
+          {SCHEDULE.map((ev, i) => (
+            <div
+              key={ev.title}
+              className={`grid grid-cols-[90px_1fr] items-baseline gap-3 border-b border-hair px-1 py-5 sm:grid-cols-[120px_1fr_120px] sm:gap-5 ${
+                i === SCHEDULE.length - 1 ? 'border-b-[1.5px] border-b-rule' : ''
+              }`}
+            >
+              <div className="font-mono text-xs tracking-[0.02em] text-dim">
+                <b className="mb-0.5 block text-[13px] font-medium text-ink">{ev.day}</b>
+                {ev.time}
+              </div>
+              <div className="text-[21px] font-semibold tracking-[-0.01em]">
+                {ev.title}
+                {ev.main && (
+                  <span className="ml-[9px] inline-block size-2 rounded-full border-[1.5px] border-ink bg-lime align-middle" />
+                )}
+                <small className="mt-[5px] block font-mono text-[11px] leading-normal font-normal text-dim">
+                  {ev.desc}
+                </small>
+              </div>
+              <div
+                className={`col-start-2 font-mono text-[10px] tracking-[0.1em] uppercase sm:col-start-3 sm:text-right ${
+                  ev.main ? 'font-medium text-ink' : 'text-dim'
+                }`}
+              >
+                {ev.badge}
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* points */}
+      <section>
+        <Lede num="/04" title="Points" right="How to score" />
+        <div className="border-t-[1.5px] border-rule">
+          <div className="border-b border-hair bg-ink p-6 text-paper">
+            <h4 className="flex items-baseline justify-between text-xl font-black tracking-[-0.01em]">
+              ⛳ Golf
+              <span className="font-mono text-xs font-normal text-paper/60">
+                main event · up to <b className="font-medium text-lime">{golfMax} pts</b>
+              </span>
+            </h4>
+            <p className="mt-[7px] font-mono text-[11px] leading-relaxed tracking-[0.01em] text-paper/60">
+              {golfGames
+                .map(
+                  (g) =>
+                    `${shortName(g.name)} — ${
+                      Array.isArray(g.points) ? g.points.join(' / ') : `${g.points} pts`
+                    }`,
+                )
+                .join(' · ')}
+              . Points go to the winner's team.
+            </p>
+          </div>
+          <div className="grid sm:grid-cols-2">
+            {miniGames.map((g, i) => (
+              <div
+                key={g.id}
+                className={`border-b border-hair px-1 py-5 ${
+                  i % 2 === 0 ? 'sm:border-r sm:border-r-hair sm:pr-6' : 'sm:pl-6'
+                }`}
+              >
+                <h4 className="flex items-baseline justify-between text-xl font-black tracking-[-0.01em]">
+                  {g.name}
+                  <span className="font-mono text-xs font-normal text-dim">
+                    max {maxPoints(g)}
+                  </span>
+                </h4>
+                <p className="mt-[7px] font-mono text-[11px] leading-relaxed tracking-[0.01em] text-dim">
+                  {pointsDetail(g)}
+                </p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* footer line */}
+      <footer className="mt-10 flex flex-wrap justify-between gap-2 border-t-[1.5px] border-rule pt-[18px] font-mono text-[11px] tracking-[0.04em] text-dim">
+        <span>Scquff's Bach · 2026</span>
+        <span>
+          Golf {golfMax} · Minis {miniMax} · May the best foursome win
+        </span>
+      </footer>
     </div>
   )
 }

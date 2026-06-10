@@ -1,8 +1,35 @@
 @import "tailwindcss";
 
+@theme {
+  /* Editorial palette from the "Championship" design */
+  --color-paper: #f7f5f0;
+  --color-ink: #111110;
+  --color-rule: #1a1a18;
+  --color-hair: rgba(17, 17, 16, 0.14);
+  --color-dim: #8a8780;
+  --color-lime: #d6f24b;
+
+  --font-serif: "Fraunces", Georgia, serif;
+  --font-mono: "DM Mono", ui-monospace, monospace;
+}
+
 body {
-  background-color: #09090b;
-  color: #fafafa;
-  font-family: system-ui, -apple-system, sans-serif;
+  background-color: #f7f5f0;
+  color: #111110;
+  font-family: "Fraunces", Georgia, serif;
+  line-height: 1.35;
   -webkit-font-smoothing: antialiased;
+}
+
+.kicker {
+  font-family: "DM Mono", ui-monospace, monospace;
+  font-size: 11px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: #8a8780;
+}
+
+.outlined {
+  -webkit-text-stroke: 1.6px #111110;
+  color: transparent;
 }
