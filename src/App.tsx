@@ -52,11 +52,13 @@ export default function App() {
             <button
               key={t.id}
               onClick={() => setTab(t.id)}
-              className="flex flex-1 justify-center py-3.5 font-mono text-xs tracking-[0.04em]"
+              className="flex flex-1 justify-center py-2.5 font-mono text-xs tracking-[0.04em]"
             >
               <span
-                className={`border-b-[1.5px] pb-0.5 ${
-                  tab === t.id ? 'border-ink text-ink' : 'border-transparent text-dim'
+                className={`rounded-full border-[1.5px] px-3.5 py-1.5 transition-colors ${
+                  tab === t.id
+                    ? 'border-ink bg-lime text-ink shadow-[2px_2px_0_0_#111110]'
+                    : 'border-transparent text-dim'
                 }`}
               >
                 {t.label}
