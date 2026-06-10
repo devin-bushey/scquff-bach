@@ -68,11 +68,6 @@ function pointsDetail(game: Game) {
   return `Winner's team takes ${game.points} pts.`
 }
 
-// The main team-match column stays visible on mobile; other events collapse.
-function alwaysVisible(game: Game) {
-  return game.category === 'golf' && game.kind === 'placement'
-}
-
 export default function Scoreboard({ league }: { league: League }) {
   const { teams, games, results } = league
   const { totals, byGame, ranked } = computeStandings(teams, games, results)
@@ -164,57 +159,55 @@ export default function Scoreboard({ league }: { league: League }) {
       {/* breakdown */}
       <section>
         <Lede num="/02" title="The Breakdown" right="Per event" />
-        <table className="w-full border-collapse border-t-[1.5px] border-b-[1.5px] border-rule font-mono">
-          <thead>
-            <tr>
-              <th className="border-b border-hair px-2 py-3 text-left text-[10px] font-normal tracking-[0.12em] text-dim uppercase">
-                Team
-              </th>
-              {games.map((g) => (
-                <th
-                  key={g.id}
-                  className={`border-b border-hair px-2 py-3 text-center text-[10px] font-normal tracking-[0.12em] text-dim uppercase ${
-                    alwaysVisible(g) ? '' : 'hidden sm:table-cell'
-                  }`}
-                >
-                  {shortName(g.name)}
+        <div className="overflow-x-auto">
+          <table className="w-full min-w-[640px] border-collapse border-t-[1.5px] border-b-[1.5px] border-rule font-mono">
+            <thead>
+              <tr>
+                <th className="border-b border-hair px-2 py-3 text-left text-[10px] font-normal tracking-[0.12em] whitespace-nowrap text-dim uppercase">
+                  Team
                 </th>
-              ))}
-              <th className="border-b border-hair px-2 py-3 text-center text-[10px] font-normal tracking-[0.12em] text-dim uppercase">
-                Total
-              </th>
-            </tr>
-          </thead>
-          <tbody>
-            {ranked.map((team) => (
-              <tr key={team.id}>
-                <td className="border-b border-hair px-2 py-3 text-left font-serif text-base font-black">
-                  {team.name}
-                </td>
-                {games.map((g) => {
-                  const pts = byGame.get(g.id)
-                  return (
-                    <td
-                      key={g.id}
-                      className={`border-b border-hair px-2 py-3 text-center text-[13px] tabular-nums ${
-                        alwaysVisible(g) ? '' : 'hidden sm:table-cell'
-                      }`}
-                    >
-                      {pts ? (
-                        (pts.get(team.id) ?? <span className="text-dim">0</span>)
-                      ) : (
-                        <span className="text-dim">—</span>
-                      )}
-                    </td>
-                  )
-                })}
-                <td className="border-b border-hair bg-ink px-2 py-3 text-center text-base font-medium text-paper tabular-nums">
-                  {totals.get(team.id) ?? 0}
-                </td>
+                {games.map((g) => (
+                  <th
+                    key={g.id}
+                    className="border-b border-hair px-2 py-3 text-center text-[10px] font-normal tracking-[0.12em] whitespace-nowrap text-dim uppercase"
+                  >
+                    {shortName(g.name)}
+                  </th>
+                ))}
+                <th className="border-b border-hair px-2 py-3 text-center text-[10px] font-normal tracking-[0.12em] whitespace-nowrap text-dim uppercase">
+                  Total
+                </th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {ranked.map((team) => (
+                <tr key={team.id}>
+                  <td className="border-b border-hair px-2 py-3 text-left font-serif text-base font-black whitespace-nowrap">
+                    {team.name}
+                  </td>
+                  {games.map((g) => {
+                    const pts = byGame.get(g.id)
+                    return (
+                      <td
+                        key={g.id}
+                        className="border-b border-hair px-2 py-3 text-center text-[13px] tabular-nums"
+                      >
+                        {pts ? (
+                          (pts.get(team.id) ?? <span className="text-dim">0</span>)
+                        ) : (
+                          <span className="text-dim">—</span>
+                        )}
+                      </td>
+                    )
+                  })}
+                  <td className="border-b border-hair bg-ink px-2 py-3 text-center text-base font-medium text-paper tabular-nums">
+                    {totals.get(team.id) ?? 0}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </section>
 
       {/* schedule */}

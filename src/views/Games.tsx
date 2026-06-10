@@ -254,7 +254,7 @@ export default function Games({ league }: { league: League }) {
             >
               <button
                 onClick={() => setOpenId(open ? null : game.id)}
-                className="flex w-full items-baseline justify-between gap-3 text-left"
+                className="group flex w-full items-center justify-between gap-3 text-left"
               >
                 <div className="min-w-0">
                   <p className="text-[21px] font-semibold tracking-[-0.01em]">{game.name}</p>
@@ -262,16 +262,25 @@ export default function Games({ league }: { league: League }) {
                     {result ? resultSummary(game, result, teams) : 'Not played yet'}
                   </p>
                 </div>
-                <span
-                  className={`shrink-0 font-mono text-[10px] tracking-[0.1em] uppercase ${
-                    complete ? 'font-medium text-ink' : 'text-dim'
-                  }`}
-                >
-                  {complete
-                    ? '✓ Done'
-                    : game.kind === 'matchup' && decided > 0
-                      ? `${decided}/3 played`
-                      : pointsLabel(game)}
+                <span className="flex shrink-0 items-center gap-3">
+                  <span
+                    className={`font-mono text-[10px] tracking-[0.1em] uppercase ${
+                      complete ? 'font-medium text-ink' : 'text-dim'
+                    }`}
+                  >
+                    {complete
+                      ? '✓ Done'
+                      : game.kind === 'matchup' && decided > 0
+                        ? `${decided}/3 played`
+                        : pointsLabel(game)}
+                  </span>
+                  <span
+                    className={`flex size-7 items-center justify-center rounded-full border-[1.5px] border-ink text-[15px] leading-none transition-all group-hover:bg-lime ${
+                      open ? 'rotate-45 bg-lime' : ''
+                    }`}
+                  >
+                    +
+                  </span>
                 </span>
               </button>
               {open && (
