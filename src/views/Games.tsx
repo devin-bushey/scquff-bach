@@ -275,8 +275,8 @@ export default function Games({ league }: { league: League }) {
                         : pointsLabel(game)}
                   </span>
                   <span
-                    className={`flex size-7 items-center justify-center rounded-full border-[1.5px] border-ink text-[15px] leading-none transition-all group-hover:bg-lime ${
-                      open ? 'rotate-45 bg-lime' : 'bg-lime/40'
+                    className={`flex size-7 items-center justify-center rounded-full border-[1.5px] border-ink text-[15px] leading-none transition-all group-hover:bg-sky ${
+                      open ? 'rotate-45 bg-sky' : 'bg-sky/40'
                     }`}
                   >
                     +
