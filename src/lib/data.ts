@@ -132,7 +132,7 @@ export async function clearResult(gameId: number) {
 
 export async function updateTeam(
   id: number,
-  patch: { name?: string; color?: string; players?: string[] },
+  patch: { name?: string; color?: string; players?: string[]; photo?: string | null },
 ) {
   const { error } = await supabase.from('teams').update(patch).eq('id', id)
   if (error) throw error

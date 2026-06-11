@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { updateTeam } from '../lib/data'
 import type { League } from '../lib/data'
 import type { Team } from '../lib/types'
+import { PHOTO_KEYS, PHOTOS, photoUrl } from '../lib/photos'
 import Lede from '../components/Lede'
 
 // Editorial palette: lime + ink plus muted tones that sit well on paper
@@ -13,6 +14,7 @@ function TeamCard({ team, last, refresh }: { team: Team; last: boolean; refresh:
   const [players, setPlayers] = useState<string[]>(
     Array.from({ length: 4 }, (_, i) => team.players[i] ?? ''),
   )
+  const [photo, setPhoto] = useState<string | null>(team.photo)
   const [busy, setBusy] = useState(false)
 
   async function save() {
@@ -22,6 +24,7 @@ function TeamCard({ team, last, refresh }: { team: Team; last: boolean; refresh:
         name: name.trim() || team.name,
         color,
         players: players.map((p) => p.trim()).filter(Boolean),
+        photo,
       })
       await refresh()
     } catch (e) {
@@ -36,10 +39,21 @@ function TeamCard({ team, last, refresh }: { team: Team; last: boolean; refresh:
       className={`border-b border-hair px-1 py-6 ${last ? 'border-b-[1.5px] border-b-rule' : ''}`}
     >
       <div className="flex items-center gap-3">
-        <span
-          className="size-3 shrink-0 rounded-full border-[1.5px] border-ink"
-          style={{ backgroundColor: color }}
-        />
+        {photoUrl(photo) ? (
+          <img
+            src={photoUrl(photo)!}
+            alt=""
+            width={40}
+            height={40}
+            className="size-10 shrink-0 rounded-full border-[1.5px] border-ink object-cover"
+            style={{ boxShadow: `0 0 0 2.5px ${color}` }}
+          />
+        ) : (
+          <span
+            className="size-3 shrink-0 rounded-full border-[1.5px] border-ink"
+            style={{ backgroundColor: color }}
+          />
+        )}
         <input
           value={name}
           onChange={(e) => setName(e.target.value)}
@@ -59,6 +73,41 @@ function TeamCard({ team, last, refresh }: { team: Team; last: boolean; refresh:
             aria-label={`Pick color ${c}`}
           />
         ))}
+      </div>
+      <div className="mt-5">
+        <p className="kicker mb-2.5">Team photo</p>
+        <div className="flex flex-wrap gap-2.5">
+          <button
+            onClick={() => setPhoto(null)}
+            aria-label="No photo"
+            className={`flex size-20 shrink-0 items-center justify-center rounded-full border-[1.5px] border-dashed border-ink font-mono text-[9px] tracking-[0.1em] uppercase ${
+              photo === null ? 'ring-2 ring-ink ring-offset-2 ring-offset-paper' : 'text-dim opacity-60'
+            }`}
+          >
+            None
+          </button>
+          {PHOTO_KEYS.map((key) => (
+            <button
+              key={key}
+              onClick={() => setPhoto(key)}
+              aria-label={`Pick photo ${key}`}
+              className={`size-20 shrink-0 rounded-full ${
+                photo === key
+                  ? 'ring-2 ring-ink ring-offset-2 ring-offset-paper'
+                  : 'opacity-75'
+              }`}
+            >
+              <img
+                src={PHOTOS[key]}
+                alt=""
+                width={80}
+                height={80}
+                loading="lazy"
+                className="size-20 rounded-full border-[1.5px] border-ink object-cover"
+              />
+            </button>
+          ))}
+        </div>
       </div>
       <div className="mt-4 grid grid-cols-2 gap-2">
         {players.map((p, i) => (

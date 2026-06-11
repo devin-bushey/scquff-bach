@@ -1,6 +1,7 @@
 import { computeStandings, isGameComplete } from '../lib/data'
 import type { League } from '../lib/data'
 import type { Game } from '../lib/types'
+import { photoUrl } from '../lib/photos'
 import Lede from '../components/Lede'
 
 const SCHEDULE = [
@@ -129,10 +130,22 @@ export default function Scoreboard({ league }: { league: League }) {
                 </span>
                 <span className="min-w-0">
                   <span className="block text-[clamp(28px,5.2vw,46px)] leading-none font-black tracking-[-0.02em]">
-                    <span
-                      className="mr-3 inline-block size-3 rounded-full border-[1.5px] border-ink align-baseline"
-                      style={{ backgroundColor: team.color }}
-                    />
+                    {photoUrl(team.photo) ? (
+                      <img
+                        src={photoUrl(team.photo)!}
+                        alt=""
+                        width={44}
+                        height={44}
+                        loading="lazy"
+                        className="mr-3 inline-block size-11 rounded-full border-[1.5px] border-ink object-cover align-[-0.18em]"
+                        style={{ boxShadow: `0 0 0 2.5px ${team.color}` }}
+                      />
+                    ) : (
+                      <span
+                        className="mr-3 inline-block size-3 rounded-full border-[1.5px] border-ink align-baseline"
+                        style={{ backgroundColor: team.color }}
+                      />
+                    )}
                     {team.name}
                     {lead && (
                       <span className="ml-3.5 rounded-[2px] bg-lime px-[7px] py-[3px] align-middle font-mono text-[10px] font-normal tracking-[0.14em]">

@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { clearResult, decidedMatches, isGameComplete, matchupPairs, saveResult } from '../lib/data'
 import type { League } from '../lib/data'
 import type { Game, GameResult, Team } from '../lib/types'
+import { photoUrl } from '../lib/photos'
 import Lede from '../components/Lede'
 
 const PLACE_LABELS = ['1st', '2nd', '3rd']
@@ -43,14 +44,25 @@ function TeamButton({
   selected: boolean
   onClick: () => void
 }) {
+  const url = photoUrl(team.photo)
   return (
     <button
       onClick={onClick}
-      className={`flex-1 truncate border-[1.5px] border-ink px-2 py-2 font-mono text-xs transition-colors ${
+      className={`flex flex-1 items-center justify-center gap-1.5 border-[1.5px] border-ink px-2 py-2 font-mono text-xs transition-colors ${
         selected ? 'bg-lime font-medium' : 'bg-transparent text-ink'
       }`}
     >
-      {team.name}
+      {url && (
+        <img
+          src={url}
+          alt=""
+          width={20}
+          height={20}
+          loading="lazy"
+          className="size-5 shrink-0 rounded-full border border-ink object-cover"
+        />
+      )}
+      <span className="truncate">{team.name}</span>
     </button>
   )
 }
