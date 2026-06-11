@@ -18,6 +18,12 @@ function TeamCard({ team, last, refresh }: { team: Team; last: boolean; refresh:
   const [busy, setBusy] = useState(false)
   const [uploading, setUploading] = useState(false)
   const fileInput = useRef<HTMLInputElement>(null)
+  // the team's uploaded photo (current selection or last saved), shown as its own picker cell
+  const uploaded = photo?.startsWith('http')
+    ? photo
+    : team.photo?.startsWith('http')
+      ? team.photo
+      : null
 
   async function upload(file: File) {
     setUploading(true)
@@ -114,21 +120,30 @@ function TeamCard({ team, last, refresh }: { team: Team; last: boolean; refresh:
             onClick={() => fileInput.current?.click()}
             disabled={uploading}
             aria-label="Upload a photo"
-            className={`size-20 shrink-0 overflow-hidden rounded-full border-[1.5px] border-dashed border-ink ${
-              photo?.startsWith('http')
-                ? 'ring-2 ring-ink ring-offset-2 ring-offset-paper'
-                : 'text-dim opacity-60'
-            }`}
+            className="flex size-20 shrink-0 flex-col items-center justify-center gap-1 rounded-full border-[1.5px] border-dashed border-ink font-mono text-[9px] tracking-[0.1em] text-dim uppercase opacity-60"
           >
-            {photo?.startsWith('http') && !uploading ? (
-              <img src={photo} alt="" width={80} height={80} className="size-full object-cover" />
-            ) : (
-              <span className="flex size-full flex-col items-center justify-center gap-1 font-mono text-[9px] tracking-[0.1em] uppercase">
-                <span className="text-base">📷</span>
-                {uploading ? 'Uploading…' : 'Upload'}
-              </span>
-            )}
+            <span className="text-base">📷</span>
+            {uploading ? 'Uploading…' : 'Upload'}
           </button>
+          {uploaded && (
+            <button
+              onClick={() => setPhoto(uploaded)}
+              aria-label="Pick uploaded photo"
+              className={`size-20 shrink-0 rounded-full ${
+                photo === uploaded
+                  ? 'ring-2 ring-ink ring-offset-2 ring-offset-paper'
+                  : 'opacity-75'
+              }`}
+            >
+              <img
+                src={uploaded}
+                alt=""
+                width={80}
+                height={80}
+                className="size-20 rounded-full border-[1.5px] border-ink object-cover"
+              />
+            </button>
+          )}
           {PHOTO_KEYS.map((key) => (
             <button
               key={key}
