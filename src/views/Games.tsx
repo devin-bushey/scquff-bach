@@ -232,7 +232,7 @@ function ResultForm({
           <input
             value={winnerPlayer}
             onChange={(e) => setWinnerPlayer(e.target.value)}
-            placeholder="Who hit it? (optional)"
+            placeholder="Who hit it?"
             className="w-full border-[1.5px] border-ink bg-transparent px-3 py-2 font-mono text-sm placeholder:text-dim focus:outline-none"
           />
         </>
