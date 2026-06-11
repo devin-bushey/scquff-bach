@@ -490,54 +490,53 @@ export default function Games({ league }: { league: League }) {
                 i === list.length - 1 ? 'border-b-[1.5px] border-b-rule' : ''
               }`}
             >
-              <div className="flex items-center gap-3">
-                <button
-                  onClick={() => setOpenId(open ? null : game.id)}
-                  className="group flex min-w-0 flex-1 items-center justify-between gap-3 text-left"
-                >
-                  <div className="min-w-0">
-                    <p className="text-[21px] font-semibold tracking-[-0.01em]">{game.name}</p>
-                    <p className="mt-[5px] truncate font-mono text-[11px] text-dim">
-                      {result ? resultSummary(game, result, teams) : 'Not played yet'}
-                    </p>
-                  </div>
-                  <span className="flex shrink-0 items-center gap-3">
-                    <span
-                      className={`font-mono text-[10px] tracking-[0.1em] uppercase ${
-                        complete ? 'font-medium text-ink' : 'text-dim'
-                      }`}
-                    >
-                      {complete
-                        ? '✓ Done'
-                        : game.kind === 'matchup' && decided > 0
-                          ? `${decided}/3 played`
-                          : pointsLabel(game)}
-                    </span>
-                    <span
-                      className={`flex size-7 items-center justify-center rounded-full border-[1.5px] border-ink text-[15px] leading-none transition-all group-hover:bg-sky ${
-                        open ? 'rotate-45 bg-sky' : 'bg-sky/40'
-                      }`}
-                    >
-                      +
-                    </span>
+              <button
+                onClick={() => setOpenId(open ? null : game.id)}
+                className="group flex w-full items-center justify-between gap-3 text-left"
+              >
+                <div className="min-w-0">
+                  <p className="text-[21px] font-semibold tracking-[-0.01em]">{game.name}</p>
+                  <p className="mt-[5px] truncate font-mono text-[11px] text-dim">
+                    {result ? resultSummary(game, result, teams) : 'Not played yet'}
+                  </p>
+                </div>
+                <span className="flex shrink-0 items-center gap-3">
+                  <span
+                    className={`font-mono text-[10px] tracking-[0.1em] uppercase ${
+                      complete ? 'font-medium text-ink' : 'text-dim'
+                    }`}
+                  >
+                    {complete
+                      ? '✓ Done'
+                      : game.kind === 'matchup' && decided > 0
+                        ? `${decided}/3 played`
+                        : pointsLabel(game)}
                   </span>
-                </button>
-                <button
-                  onClick={() => setSettingsGame(game)}
-                  aria-label={`Settings for ${game.name}`}
-                  className="flex size-7 shrink-0 items-center justify-center rounded-full border-[1.5px] border-rule text-[13px] leading-none text-dim transition-colors hover:border-ink hover:text-ink"
-                >
-                  ⚙
-                </button>
-              </div>
+                  <span
+                    className={`flex size-7 items-center justify-center rounded-full border-[1.5px] border-ink text-[15px] leading-none transition-all group-hover:bg-sky ${
+                      open ? 'rotate-45 bg-sky' : 'bg-sky/40'
+                    }`}
+                  >
+                    +
+                  </span>
+                </span>
+              </button>
               {open && (
-                <ResultForm
-                  game={game}
-                  teams={teams}
-                  result={result}
-                  onDone={() => setOpenId(null)}
-                  refresh={refresh}
-                />
+                <>
+                  <ResultForm
+                    game={game}
+                    teams={teams}
+                    result={result}
+                    onDone={() => setOpenId(null)}
+                    refresh={refresh}
+                  />
+                  <button
+                    onClick={() => setSettingsGame(game)}
+                    className="mt-3 flex w-full items-center justify-center gap-2 border-[1.5px] border-rule py-2.5 font-mono text-[11px] tracking-[0.14em] text-dim uppercase transition-colors hover:border-ink hover:text-ink"
+                  >
+                    <span className="text-[13px] leading-none">⚙</span> Game settings
+                  </button>
+                </>
               )}
             </div>
           )
