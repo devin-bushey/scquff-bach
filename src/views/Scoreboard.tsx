@@ -1,6 +1,5 @@
 import { computeStandings, isGameComplete } from '../lib/data'
 import type { League } from '../lib/data'
-import type { Game } from '../lib/types'
 import { photoUrl } from '../lib/photos'
 import Lede from '../components/Lede'
 
