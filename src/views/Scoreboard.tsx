@@ -56,28 +56,17 @@ function shortName(name: string) {
     .replace('Beer Pong', 'BP')
 }
 
-function maxPoints(game: Game) {
-  if (Array.isArray(game.points)) return Math.max(...game.points)
-  // matchup: a team plays two matches, so max is two wins
-  return game.kind === 'matchup' ? game.points * 2 : game.points
-}
-
-function pointsDetail(game: Game) {
-  if (Array.isArray(game.points)) return `${game.points.join(' / ')} by finish.`
-  if (game.kind === 'matchup')
-    return `Round-robin, every team plays every team once. ${game.points} pts per match win.`
-  return `Winner's team takes ${game.points} pts.`
-}
-
-export default function Scoreboard({ league }: { league: League }) {
+export default function Scoreboard({
+  league,
+  onGoToGames,
+}: {
+  league: League
+  onGoToGames: () => void
+}) {
   const { teams, games, results } = league
   const { totals, byGame, ranked } = computeStandings(teams, games, results)
 
   const playerCount = 12
-  const golfGames = games.filter((g) => g.category === 'golf')
-  const miniGames = games.filter((g) => g.category === 'mini')
-  const golfMax = golfGames.reduce((s, g) => s + maxPoints(g), 0)
-  const miniMax = miniGames.reduce((s, g) => s + maxPoints(g), 0)
 
   return (
     <div>
@@ -259,59 +248,23 @@ export default function Scoreboard({ league }: { league: League }) {
         </div>
       </section>
 
-      {/* points */}
+      {/* points → games link */}
       <section>
-        <Lede num="/04" title="Points" right="How to score" />
-        <div className="border-t-[1.5px] border-rule">
-          <div className="border-b border-hair bg-ink p-6 text-paper">
-            <h4 className="flex items-baseline justify-between text-xl font-black tracking-[-0.01em]">
-              ⛳ Golf
-              <span className="font-mono text-xs font-normal text-paper/60">
-                main event · up to <b className="font-medium text-lime">{golfMax} pts</b>
-              </span>
-            </h4>
-            <p className="mt-[7px] font-mono text-[11px] leading-relaxed tracking-[0.01em] text-paper/60">
-              {golfGames
-                .map(
-                  (g) =>
-                    `${shortName(g.name)} — ${
-                      Array.isArray(g.points) ? g.points.join(' / ') : `${g.points} pts`
-                    }`,
-                )
-                .join(' · ')}
-              . Points go to the winner's team.
-            </p>
-          </div>
-          <div className="grid sm:grid-cols-2">
-            {miniGames.map((g, i) => (
-              <div
-                key={g.id}
-                className={`border-b border-hair px-1 py-5 ${
-                  i % 2 === 0 ? 'sm:border-r sm:border-r-hair sm:pr-6' : 'sm:pl-6'
-                }`}
-              >
-                <h4 className="flex items-baseline justify-between text-xl font-black tracking-[-0.01em]">
-                  {g.name}
-                  <span className="font-mono text-xs font-normal text-dim">
-                    max {maxPoints(g)}
-                  </span>
-                </h4>
-                <p className="mt-[7px] font-mono text-[11px] leading-relaxed tracking-[0.01em] text-dim">
-                  {pointsDetail(g)}
-                </p>
-              </div>
-            ))}
-          </div>
-        </div>
+        <button
+          onClick={onGoToGames}
+          className="group flex w-full items-center justify-between gap-3 border-t-[1.5px] border-rule py-6 text-left"
+        >
+          <span>
+            <span className="kicker">How to score</span>
+            <span className="mt-1.5 block text-xl font-black tracking-[-0.01em]">
+              See games & points
+            </span>
+          </span>
+          <span className="flex size-9 shrink-0 items-center justify-center rounded-full border-[1.5px] border-ink bg-sky/40 text-lg leading-none transition-colors group-hover:bg-sky">
+            →
+          </span>
+        </button>
       </section>
-
-      {/* footer line */}
-      <footer className="mt-10 flex flex-wrap justify-between gap-2 border-t-[1.5px] border-rule pt-[18px] font-mono text-[11px] tracking-[0.04em] text-dim">
-        <span>Scquff's Bach · 2026</span>
-        <span>
-          Golf {golfMax} · Minis {miniMax} · May the best foursome win
-        </span>
-      </footer>
     </div>
   )
 }

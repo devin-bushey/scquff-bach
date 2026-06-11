@@ -125,8 +125,26 @@ export async function saveResult(
   if (error) throw error
 }
 
+export async function addGame(name: string, games: Game[]) {
+  const maxSort = games.reduce((m, g) => Math.max(m, g.sort_order), -1)
+  const { error } = await supabase.from('games').insert({
+    name,
+    category: 'mini',
+    kind: 'matchup',
+    points: 5,
+    sort_order: maxSort + 1,
+  })
+  if (error) throw error
+}
+
 export async function clearResult(gameId: number) {
   const { error } = await supabase.from('results').delete().eq('game_id', gameId)
+  if (error) throw error
+}
+
+export async function deleteGame(gameId: number) {
+  await clearResult(gameId)
+  const { error } = await supabase.from('games').delete().eq('id', gameId)
   if (error) throw error
 }
 

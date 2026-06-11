@@ -39,7 +39,7 @@ export default function App() {
         {league.loading ? (
           <p className="pt-24 text-center text-lg text-dim italic">Loading the weekend…</p>
         ) : tab === 'scoreboard' ? (
-          <Scoreboard league={league} />
+          <Scoreboard league={league} onGoToGames={() => setTab('games')} />
         ) : tab === 'games' ? (
           <Games league={league} />
         ) : (

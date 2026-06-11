@@ -1,11 +1,37 @@
 import { useState } from 'react'
-import { clearResult, decidedMatches, isGameComplete, matchupPairs, saveResult } from '../lib/data'
+import {
+  addGame,
+  clearResult,
+  decidedMatches,
+  deleteGame,
+  isGameComplete,
+  matchupPairs,
+  saveResult,
+} from '../lib/data'
 import type { League } from '../lib/data'
 import type { Game, GameResult, Team } from '../lib/types'
 import { photoUrl } from '../lib/photos'
 import Lede from '../components/Lede'
 
 const PLACE_LABELS = ['1st', '2nd', '3rd']
+
+// The seeded games are part of the event and can't be removed; only games
+// added from the UI (anything not in this set) can be deleted.
+const ORIGINAL_GAMES = new Set([
+  'Beer Pong',
+  'Pool',
+  'Table Tennis',
+  'Bowling',
+  'Golf — Team Match',
+  'Closest to the Pin #1',
+  'Closest to the Pin #2',
+  'Long Drive #1',
+  'Long Drive #2',
+])
+
+function canDeleteGame(game: Game) {
+  return !ORIGINAL_GAMES.has(game.name)
+}
 
 function pointsLabel(game: Game) {
   if (game.kind === 'placement') return `${(game.points as number[]).join(' / ')} pts`
@@ -80,6 +106,7 @@ function ResultForm({
   onDone: () => void
   refresh: () => Promise<void>
 }) {
+  const deletable = canDeleteGame(game)
   const [placements, setPlacements] = useState<(number | null)[]>(
     result?.placements ?? [null, null, null],
   )
@@ -240,6 +267,90 @@ function ResultForm({
           </button>
         )}
       </div>
+
+      {deletable && (
+        <button
+          disabled={busy}
+          onClick={() => {
+            if (confirm(`Delete "${game.name}"? This removes the game and any result.`)) {
+              run(() => deleteGame(game.id))
+            }
+          }}
+          className="mt-1 w-full border-[1.5px] border-rule py-2.5 font-mono text-[11px] tracking-[0.14em] text-dim uppercase transition-colors hover:border-ink hover:text-ink disabled:opacity-40"
+        >
+          Delete game
+        </button>
+      )}
+    </div>
+  )
+}
+
+function AddGameForm({ games, refresh }: { games: Game[]; refresh: () => Promise<void> }) {
+  const [open, setOpen] = useState(false)
+  const [name, setName] = useState('')
+  const [busy, setBusy] = useState(false)
+
+  async function save() {
+    const trimmed = name.trim()
+    if (!trimmed || busy) return
+    setBusy(true)
+    try {
+      await addGame(trimmed, games)
+      await refresh()
+      setName('')
+      setOpen(false)
+    } catch (e) {
+      alert(`Save failed: ${(e as Error).message}`)
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  return (
+    <div className="px-1 pt-5">
+      {!open ? (
+        <button
+          onClick={() => setOpen(true)}
+          className="group flex w-full items-center gap-3 text-left"
+        >
+          <span className="flex size-7 items-center justify-center rounded-full border-[1.5px] border-ink bg-sky/40 text-[15px] leading-none transition-all group-hover:bg-sky">
+            +
+          </span>
+          <span className="font-mono text-xs tracking-[0.14em] text-dim uppercase">
+            Add mini game
+          </span>
+        </button>
+      ) : (
+        <div className="space-y-2">
+          <input
+            autoFocus
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            onKeyDown={(e) => e.key === 'Enter' && save()}
+            placeholder="Game name"
+            className="w-full border-[1.5px] border-ink bg-transparent px-3 py-2 font-mono text-sm placeholder:text-dim focus:outline-none"
+          />
+          <div className="flex gap-2">
+            <button
+              disabled={!name.trim() || busy}
+              onClick={save}
+              className="flex-1 border-[1.5px] border-ink bg-ink py-2.5 font-mono text-xs tracking-[0.14em] text-paper uppercase disabled:opacity-40"
+            >
+              {busy ? 'Saving…' : 'Save game'}
+            </button>
+            <button
+              disabled={busy}
+              onClick={() => {
+                setOpen(false)
+                setName('')
+              }}
+              className="border-[1.5px] border-ink px-4 py-2.5 font-mono text-xs tracking-[0.14em] uppercase disabled:opacity-40"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
@@ -323,6 +434,7 @@ export default function Games({ league }: { league: League }) {
         </p>
       </header>
       {renderSection('/01', 'Mini Games', 'Warm-ups', games.filter((g) => g.category === 'mini'))}
+      <AddGameForm games={games} refresh={refresh} />
       {renderSection('/02', 'Golf', 'Main event', games.filter((g) => g.category === 'golf'))}
     </div>
   )
