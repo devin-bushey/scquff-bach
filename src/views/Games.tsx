@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import {
   addGame,
   clearResult,
@@ -7,6 +7,7 @@ import {
   isGameComplete,
   matchupPairs,
   saveResult,
+  updateGame,
 } from '../lib/data'
 import type { League } from '../lib/data'
 import type { Game, GameResult, Team } from '../lib/types'
@@ -106,7 +107,6 @@ function ResultForm({
   onDone: () => void
   refresh: () => Promise<void>
 }) {
-  const deletable = canDeleteGame(game)
   const [placements, setPlacements] = useState<(number | null)[]>(
     result?.placements ?? [null, null, null],
   )
@@ -267,20 +267,134 @@ function ResultForm({
           </button>
         )}
       </div>
+    </div>
+  )
+}
 
-      {deletable && (
-        <button
-          disabled={busy}
-          onClick={() => {
-            if (confirm(`Delete "${game.name}"? This removes the game and any result.`)) {
-              run(() => deleteGame(game.id))
-            }
-          }}
-          className="mt-1 w-full border-[1.5px] border-rule py-2.5 font-mono text-[11px] tracking-[0.14em] text-dim uppercase transition-colors hover:border-ink hover:text-ink disabled:opacity-40"
-        >
-          Delete game
-        </button>
-      )}
+function GameSettingsModal({
+  game,
+  refresh,
+  onClose,
+}: {
+  game: Game
+  refresh: () => Promise<void>
+  onClose: () => void
+}) {
+  const isPlacement = game.kind === 'placement'
+  const [pointsDraft, setPointsDraft] = useState<string[]>(
+    isPlacement ? (game.points as number[]).map(String) : [String(game.points)],
+  )
+  const [busy, setBusy] = useState(false)
+
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && onClose()
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [onClose])
+
+  const parsed = pointsDraft.map((v) => Number(v))
+  const valid =
+    pointsDraft.every((v) => v.trim() !== '') &&
+    parsed.every((n) => Number.isInteger(n) && n >= 0)
+
+  async function save() {
+    if (!valid || busy) return
+    setBusy(true)
+    try {
+      await updateGame(game.id, { points: isPlacement ? parsed : parsed[0] })
+      await refresh()
+      onClose()
+    } catch (e) {
+      alert(`Save failed: ${(e as Error).message}`)
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  const pointsInput = (value: string, onChange: (v: string) => void) => (
+    <input
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+      type="text"
+      inputMode="numeric"
+      pattern="[0-9]*"
+      className="w-full border-[1.5px] border-ink bg-transparent px-3 py-2 font-mono text-sm focus:outline-none"
+    />
+  )
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-ink/40 p-6"
+      onClick={onClose}
+    >
+      <div
+        className="w-full max-w-sm border-[1.5px] border-ink bg-paper p-5"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex items-center justify-between gap-3">
+          <p className="text-[21px] font-semibold tracking-[-0.01em]">{game.name}</p>
+          <button
+            onClick={onClose}
+            aria-label="Close settings"
+            className="flex size-7 shrink-0 rotate-45 items-center justify-center rounded-full border-[1.5px] border-ink bg-sky/40 text-[15px] leading-none transition-all hover:bg-sky"
+          >
+            +
+          </button>
+        </div>
+
+        <div className="mt-4 space-y-3">
+          {isPlacement ? (
+            <div className="flex gap-2">
+              {PLACE_LABELS.map((label, place) => (
+                <div key={label} className="flex-1">
+                  <p className="kicker mb-1.5">{label}</p>
+                  {pointsInput(pointsDraft[place], (v) =>
+                    setPointsDraft((prev) => prev.map((p, i) => (i === place ? v : p))),
+                  )}
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div>
+              <p className="kicker mb-1.5">
+                {game.kind === 'matchup' ? 'Points per match win' : 'Points to winner'}
+              </p>
+              {pointsInput(pointsDraft[0], (v) => setPointsDraft([v]))}
+            </div>
+          )}
+          <button
+            disabled={!valid || busy}
+            onClick={save}
+            className="w-full border-[1.5px] border-ink bg-ink py-2.5 font-mono text-xs tracking-[0.14em] text-paper uppercase disabled:opacity-40"
+          >
+            {busy ? 'Saving…' : 'Save points'}
+          </button>
+        </div>
+
+        {canDeleteGame(game) && (
+          <div className="mt-4 border-t border-hair pt-4">
+            <button
+              disabled={busy}
+              onClick={async () => {
+                if (!confirm(`Delete "${game.name}"? This removes the game and any result.`))
+                  return
+                setBusy(true)
+                try {
+                  await deleteGame(game.id)
+                  await refresh()
+                  onClose()
+                } catch (e) {
+                  alert(`Delete failed: ${(e as Error).message}`)
+                  setBusy(false)
+                }
+              }}
+              className="w-full border-[1.5px] border-rule py-2.5 font-mono text-[11px] tracking-[0.14em] text-dim uppercase transition-colors hover:border-ink hover:text-ink disabled:opacity-40"
+            >
+              Delete game
+            </button>
+          </div>
+        )}
+      </div>
     </div>
   )
 }
@@ -358,6 +472,7 @@ function AddGameForm({ games, refresh }: { games: Game[]; refresh: () => Promise
 export default function Games({ league }: { league: League }) {
   const { games, teams, results, refresh } = league
   const [openId, setOpenId] = useState<number | null>(null)
+  const [settingsGame, setSettingsGame] = useState<Game | null>(null)
 
   const renderSection = (num: string, title: string, right: string, list: Game[]) => (
     <section>
@@ -375,37 +490,46 @@ export default function Games({ league }: { league: League }) {
                 i === list.length - 1 ? 'border-b-[1.5px] border-b-rule' : ''
               }`}
             >
-              <button
-                onClick={() => setOpenId(open ? null : game.id)}
-                className="group flex w-full items-center justify-between gap-3 text-left"
-              >
-                <div className="min-w-0">
-                  <p className="text-[21px] font-semibold tracking-[-0.01em]">{game.name}</p>
-                  <p className="mt-[5px] truncate font-mono text-[11px] text-dim">
-                    {result ? resultSummary(game, result, teams) : 'Not played yet'}
-                  </p>
-                </div>
-                <span className="flex shrink-0 items-center gap-3">
-                  <span
-                    className={`font-mono text-[10px] tracking-[0.1em] uppercase ${
-                      complete ? 'font-medium text-ink' : 'text-dim'
-                    }`}
-                  >
-                    {complete
-                      ? '✓ Done'
-                      : game.kind === 'matchup' && decided > 0
-                        ? `${decided}/3 played`
-                        : pointsLabel(game)}
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={() => setOpenId(open ? null : game.id)}
+                  className="group flex min-w-0 flex-1 items-center justify-between gap-3 text-left"
+                >
+                  <div className="min-w-0">
+                    <p className="text-[21px] font-semibold tracking-[-0.01em]">{game.name}</p>
+                    <p className="mt-[5px] truncate font-mono text-[11px] text-dim">
+                      {result ? resultSummary(game, result, teams) : 'Not played yet'}
+                    </p>
+                  </div>
+                  <span className="flex shrink-0 items-center gap-3">
+                    <span
+                      className={`font-mono text-[10px] tracking-[0.1em] uppercase ${
+                        complete ? 'font-medium text-ink' : 'text-dim'
+                      }`}
+                    >
+                      {complete
+                        ? '✓ Done'
+                        : game.kind === 'matchup' && decided > 0
+                          ? `${decided}/3 played`
+                          : pointsLabel(game)}
+                    </span>
+                    <span
+                      className={`flex size-7 items-center justify-center rounded-full border-[1.5px] border-ink text-[15px] leading-none transition-all group-hover:bg-sky ${
+                        open ? 'rotate-45 bg-sky' : 'bg-sky/40'
+                      }`}
+                    >
+                      +
+                    </span>
                   </span>
-                  <span
-                    className={`flex size-7 items-center justify-center rounded-full border-[1.5px] border-ink text-[15px] leading-none transition-all group-hover:bg-sky ${
-                      open ? 'rotate-45 bg-sky' : 'bg-sky/40'
-                    }`}
-                  >
-                    +
-                  </span>
-                </span>
-              </button>
+                </button>
+                <button
+                  onClick={() => setSettingsGame(game)}
+                  aria-label={`Settings for ${game.name}`}
+                  className="flex size-7 shrink-0 items-center justify-center rounded-full border-[1.5px] border-rule text-[13px] leading-none text-dim transition-colors hover:border-ink hover:text-ink"
+                >
+                  ⚙
+                </button>
+              </div>
               {open && (
                 <ResultForm
                   game={game}
@@ -436,6 +560,13 @@ export default function Games({ league }: { league: League }) {
       {renderSection('/01', 'Mini Games', 'Warm-ups', games.filter((g) => g.category === 'mini'))}
       <AddGameForm games={games} refresh={refresh} />
       {renderSection('/02', 'Golf', 'Main event', games.filter((g) => g.category === 'golf'))}
+      {settingsGame && (
+        <GameSettingsModal
+          game={games.find((g) => g.id === settingsGame.id) ?? settingsGame}
+          refresh={refresh}
+          onClose={() => setSettingsGame(null)}
+        />
+      )}
     </div>
   )
 }

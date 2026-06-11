@@ -148,6 +148,11 @@ export async function deleteGame(gameId: number) {
   if (error) throw error
 }
 
+export async function updateGame(id: number, patch: { points?: number[] | number }) {
+  const { error } = await supabase.from('games').update(patch).eq('id', id)
+  if (error) throw error
+}
+
 export async function updateTeam(
   id: number,
   patch: { name?: string; color?: string; players?: string[]; photo?: string | null },
