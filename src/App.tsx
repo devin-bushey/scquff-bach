@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useLeague } from './lib/data'
 import Scoreboard from './views/Scoreboard'
 import Games from './views/Games'
@@ -15,6 +15,10 @@ const TABS: { id: Tab; label: string }[] = [
 export default function App() {
   const [tab, setTab] = useState<Tab>('scoreboard')
   const league = useLeague()
+
+  useEffect(() => {
+    window.scrollTo(0, 0)
+  }, [tab])
 
   return (
     <div className="flex min-h-dvh flex-col">
@@ -39,7 +43,11 @@ export default function App() {
         {league.loading ? (
           <p className="pt-24 text-center text-lg text-dim italic">Loading the weekend…</p>
         ) : tab === 'scoreboard' ? (
-          <Scoreboard league={league} onGoToGames={() => setTab('games')} />
+          <Scoreboard
+            league={league}
+            onGoToGames={() => setTab('games')}
+            onGoToTeams={() => setTab('teams')}
+          />
         ) : tab === 'games' ? (
           <Games league={league} />
         ) : (

@@ -3,49 +3,6 @@ import type { League } from '../lib/data'
 import { photoUrl } from '../lib/photos'
 import Lede from '../components/Lede'
 
-const SCHEDULE = [
-  {
-    day: 'Thu',
-    time: 'Evening',
-    title: 'Draft Night',
-    desc: 'Teams formed, names chosen, board goes live.',
-    badge: 'Setup',
-    main: false,
-  },
-  {
-    day: 'Thu–Sat',
-    time: 'Ad hoc',
-    title: 'Mini Games',
-    desc: 'Beer pong, pool, ping pong — round-robins all weekend. Every team plays every team once; 5 pts a win.',
-    badge: 'Mini ×3',
-    main: false,
-  },
-  {
-    day: 'Fri',
-    time: 'Afternoon',
-    title: 'Golf',
-    desc: 'Scramble + 2 closest-to-pin + 2 long drive. The big swing.',
-    badge: 'Main event',
-    main: true,
-  },
-  {
-    day: 'Fri',
-    time: 'Night',
-    title: 'Bowling',
-    desc: 'BNA Brewing. 2 lanes, 6 a side — each team splits 2 bowlers per lane. Combined pinfall decides the finish.',
-    badge: 'Mini',
-    main: false,
-  },
-  {
-    day: 'Sat',
-    time: 'Night',
-    title: 'Wine Tour',
-    desc: 'No games — prize announcement at dinner.',
-    badge: 'Finale',
-    main: false,
-  },
-]
-
 function shortName(name: string) {
   return name
     .replace('Golf — Team Match', 'Golf')
@@ -58,9 +15,11 @@ function shortName(name: string) {
 export default function Scoreboard({
   league,
   onGoToGames,
+  onGoToTeams,
 }: {
   league: League
   onGoToGames: () => void
+  onGoToTeams: () => void
 }) {
   const { teams, games, results } = league
   const { totals, byGame, ranked } = computeStandings(teams, games, results)
@@ -211,42 +170,6 @@ export default function Scoreboard({
         </div>
       </section>
 
-      {/* schedule */}
-      <section>
-        <Lede num="/03" title="Schedule" right="Thu → Sat" />
-        <div className="border-t-[1.5px] border-rule">
-          {SCHEDULE.map((ev, i) => (
-            <div
-              key={ev.title}
-              className={`grid grid-cols-[90px_1fr] items-baseline gap-3 border-b border-hair px-1 py-5 sm:grid-cols-[120px_1fr_120px] sm:gap-5 ${
-                i === SCHEDULE.length - 1 ? 'border-b-[1.5px] border-b-rule' : ''
-              }`}
-            >
-              <div className="font-mono text-xs tracking-[0.02em] text-dim">
-                <b className="mb-0.5 block text-[13px] font-medium text-ink">{ev.day}</b>
-                {ev.time}
-              </div>
-              <div className="text-[21px] font-semibold tracking-[-0.01em]">
-                {ev.title}
-                {ev.main && (
-                  <span className="ml-[9px] inline-block size-2 rounded-full border-[1.5px] border-ink bg-lime align-middle" />
-                )}
-                <small className="mt-[5px] block font-mono text-[11px] leading-normal font-normal text-dim">
-                  {ev.desc}
-                </small>
-              </div>
-              <div
-                className={`col-start-2 font-mono text-[10px] tracking-[0.1em] uppercase sm:col-start-3 sm:text-right ${
-                  ev.main ? 'font-medium text-ink' : 'text-dim'
-                }`}
-              >
-                {ev.badge}
-              </div>
-            </div>
-          ))}
-        </div>
-      </section>
-
       {/* points → games link */}
       <section>
         <button
@@ -257,6 +180,24 @@ export default function Scoreboard({
             <span className="kicker">How to score</span>
             <span className="mt-1.5 block text-xl font-black tracking-[-0.01em]">
               See games & points
+            </span>
+          </span>
+          <span className="flex size-9 shrink-0 items-center justify-center rounded-full border-[1.5px] border-ink bg-sky/40 text-lg leading-none transition-colors group-hover:bg-sky">
+            →
+          </span>
+        </button>
+      </section>
+
+      {/* teams link */}
+      <section>
+        <button
+          onClick={onGoToTeams}
+          className="group flex w-full items-center justify-between gap-3 border-t-[1.5px] border-rule py-6 text-left"
+        >
+          <span>
+            <span className="kicker">The foursomes</span>
+            <span className="mt-1.5 block text-xl font-black tracking-[-0.01em]">
+              Create & edit teams
             </span>
           </span>
           <span className="flex size-9 shrink-0 items-center justify-center rounded-full border-[1.5px] border-ink bg-sky/40 text-lg leading-none transition-colors group-hover:bg-sky">
