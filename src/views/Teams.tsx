@@ -1,8 +1,8 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { updateTeam } from '../lib/data'
 import type { League } from '../lib/data'
 import type { Team } from '../lib/types'
-import { PHOTO_KEYS, PHOTOS, photoUrl } from '../lib/photos'
+import { PHOTO_KEYS, PHOTOS, photoUrl, uploadTeamPhoto } from '../lib/photos'
 import Lede from '../components/Lede'
 
 // Editorial palette: lime + ink plus muted tones that sit well on paper
@@ -16,6 +16,19 @@ function TeamCard({ team, last, refresh }: { team: Team; last: boolean; refresh:
   )
   const [photo, setPhoto] = useState<string | null>(team.photo)
   const [busy, setBusy] = useState(false)
+  const [uploading, setUploading] = useState(false)
+  const fileInput = useRef<HTMLInputElement>(null)
+
+  async function upload(file: File) {
+    setUploading(true)
+    try {
+      setPhoto(await uploadTeamPhoto(team.id, file))
+    } catch (e) {
+      alert(`Upload failed: ${(e as Error).message}`)
+    } finally {
+      setUploading(false)
+    }
+  }
 
   async function save() {
     setBusy(true)
@@ -86,6 +99,36 @@ function TeamCard({ team, last, refresh }: { team: Team; last: boolean; refresh:
           >
             None
           </button>
+          <input
+            ref={fileInput}
+            type="file"
+            accept="image/*"
+            className="hidden"
+            onChange={(e) => {
+              const file = e.target.files?.[0]
+              if (file) upload(file)
+              e.target.value = ''
+            }}
+          />
+          <button
+            onClick={() => fileInput.current?.click()}
+            disabled={uploading}
+            aria-label="Upload a photo"
+            className={`size-20 shrink-0 overflow-hidden rounded-full border-[1.5px] border-dashed border-ink ${
+              photo?.startsWith('http')
+                ? 'ring-2 ring-ink ring-offset-2 ring-offset-paper'
+                : 'text-dim opacity-60'
+            }`}
+          >
+            {photo?.startsWith('http') && !uploading ? (
+              <img src={photo} alt="" width={80} height={80} className="size-full object-cover" />
+            ) : (
+              <span className="flex size-full flex-col items-center justify-center gap-1 font-mono text-[9px] tracking-[0.1em] uppercase">
+                <span className="text-base">📷</span>
+                {uploading ? 'Uploading…' : 'Upload'}
+              </span>
+            )}
+          </button>
           {PHOTO_KEYS.map((key) => (
             <button
               key={key}
@@ -123,7 +166,7 @@ function TeamCard({ team, last, refresh }: { team: Team; last: boolean; refresh:
         ))}
       </div>
       <button
-        disabled={busy}
+        disabled={busy || uploading}
         onClick={save}
         className="mt-4 w-full border-[1.5px] border-ink bg-ink py-2.5 font-mono text-xs tracking-[0.14em] text-paper uppercase disabled:opacity-40"
       >
